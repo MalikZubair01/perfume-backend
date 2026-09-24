@@ -17,12 +17,34 @@ import orderRoutes from "./routes/orderRoutes.js";
 const app = express();
 
 // ---- Core middleware (order matters) ----
+
+
+
+const allowedOrigins = [
+  "https://nk-perfume-blush.vercel.app",
+  "http://localhost:3000",
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+// app.use(
+//   cors({
+//     origin: process.env.CLIENT_URL || "http://localhost:3000",
+//     credentials: true,
+//   })
+// );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
