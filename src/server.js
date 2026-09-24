@@ -17,18 +17,21 @@ import orderRoutes from "./routes/orderRoutes.js";
 const app = express();
 
 // ---- Core middleware (order matters) ----
-
-
-
 const allowedOrigins = [
+  process.env.CLIENT_URL, // set this on Railway to your Vercel production URL
   "https://nk-perfume-blush.vercel.app",
   "http://localhost:3000",
-];
+].filter(Boolean); // drops CLIENT_URL from the list if it isn't set
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      const isAllowed =
+        !origin || // allow tools like curl/Postman/health checks with no Origin header
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/nk-perfume-.*\.vercel\.app$/.test(origin); // any Vercel preview URL for this project
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error(`CORS blocked: ${origin}`));
@@ -39,12 +42,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-// app.use(
-//   cors({
-//     origin: process.env.CLIENT_URL || "http://localhost:3000",
-//     credentials: true,
-//   })
-// );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -61,7 +58,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
-// app.use("/api/orders", orderRoutes);   // add once Order model/controller are built
+app.use("/api/orders", orderRoutes);
 
 // ---- Error handling (must be last) ----
 app.use(notFound);
